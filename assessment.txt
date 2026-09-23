@@ -1,161 +1,113 @@
-Senior Solidity / EVM Engineer – Technical Assessment
+Senior Solana Blockchain Engineer–Technical Assessment
 
-Project Context
-
-DracoinLabs is developing a Web3 staking and rewards ecosystem involving ERC-20 tokens, staking, rewards, treasury management, and future DAO governance features.
-
-This assessment evaluates your ability to understand Solidity/EVM systems, identify smart-contract security risks, design staking mechanisms, and make practical production-level architecture decisions.
+The goal is to evaluate your ability to review blockchain architecture, identify security issues, and propose improvements for a production-ready Web3 application.
 
 Time Limit: 60 Minutes
 
-SECTION 1 – SOLIDITY & EVM FUNDAMENTALS
+---
 
-Question 1
+## Section 1 – Solana Fundamentals
 
-Explain the difference between:
-
-* storage
-* memory
-* calldata
-
-Provide one practical example of when each should be used.
-
-Question 2
+### Question 1
 
 Explain the difference between:
 
-* msg.sender
-* tx.origin
+* Solana Accounts
+* Programs
+* PDAs (Program Derived Addresses)
 
-Why should tx.origin generally not be used for authorization?
+Provide a practical example of how each would be used in a meme coin project.
 
-Question 3
+---
 
-What are the main risks of using delegatecall in an upgradeable smart-contract system?
+### Question 2
 
-Explain how these risks can be reduced.
+Why might a Solana project choose Anchor Framework instead of native Solana development?
 
-SECTION 2 – SMART CONTRACT SECURITY REVIEW
+---
 
-Review the following simplified staking contract:
+### Question 3
 
-```solidity
-function stake(uint256 amount) external {
-    token.transferFrom(msg.sender, address(this), amount);
+What security risks should be considered when managing a token treasury on Solana?
 
-    stakes[msg.sender] += amount;
-    lastUpdate[msg.sender] = block.timestamp;
-}
+---
 
-function withdraw(uint256 amount) external {
-    require(stakes[msg.sender] >= amount, "Insufficient");
+## Section 2 – Architecture Review
 
-    stakes[msg.sender] -= amount;
+Assume the current project contains:
 
-    token.transfer(msg.sender, amount);
+* SPL Token
+* Wallet Connection
+* Token Transfers
+
+### Task
+
+Provide a short technical review covering:
+
+1. Current strengths
+2. Current limitations
+3. Security concerns
+4. Features needed for production launch
+5. Recommended next development phase
+
+Maximum: 1 page
+
+---
+
+## Section 3 – Code Review
+
+Review the following code:
+
+```rust id="4uxznd"
+pub fn transfer_rewards(ctx: Context<TransferRewards>, amount: u64) -> Result<()> {
+    token::transfer(
+        ctx.accounts.transfer_context(),
+        amount,
+    )?;
+
+    Ok(())
 }
 ```
 
-Identify at least 5 security or design issues.
+### Questions
 
-For each issue, explain:
+1. What validations are missing?
+2. What security risks exist?
+3. What improvements would you make?
+4. What tests would you write?
 
-1. What is wrong?
-2. Why could it be dangerous?
-3. How would you fix it?
+---
 
-Consider the following areas:
+## Section 4 – System Design 
 
-* ERC-20 transfer handling
-* Reward accounting
-* Reentrancy
-* Access control
-* Accounting consistency
-* Token compatibility
-* Timestamp assumptions
-* Emergency controls
-* Zero-value operations
-* Failure handling
-
-SECTION 3 – STAKING SYSTEM DESIGN
-
-Design a basic ERC-20 staking system for the DracoinLabs ecosystem.
+The meme coin project wants to add staking.
 
 Briefly explain:
 
-1. What contracts would you create?
-2. How would you track each user's staked amount?
-3. How would rewards be calculated?
-4. How would users claim rewards?
-5. How would you prevent users from claiming the same rewards twice?
-6. How would you handle staking-token and reward-token decimals?
-7. What happens if the reward pool does not have enough tokens?
-8. How would you handle users staking, withdrawing, and claiming rewards at different times?
+1. Required accounts
+2. Reward calculation approach
+3. How rewards should be distributed
+4. Security considerations
 
-Maximum: 400 words.
+Maximum: 300 words
 
-SECTION 4 – TREASURY & PRODUCTION ARCHITECTURE
+---
 
-DracoinLabs plans to hold a significant amount of tokens in a treasury.
+# Evaluation Criteria
 
-Explain how you would design the treasury so that a single compromised private key cannot immediately move all treasury funds.
+| Area                  | Points |
+| --------------------- | ------ |
+| Solana Knowledge      | 25     |
+| Anchor Knowledge      | 15     |
+| Security Awareness    | 25     |
+| Architecture Thinking | 20     |
+| Communication         | 15     |
 
-Discuss:
+Total: 100 Points
 
-* Multisig
-* Role-based access control
-* Timelocks
-* Emergency pause mechanisms
-* Upgrade authority
-* Spending limits
-* Transaction monitoring
-* Ownership transfer
+### Hiring Recommendation
 
-Also explain how you would separate administrative privileges from fund-management privileges.
-
-Maximum: 300 words.
-
-SECTION 5 – TESTING & DEPLOYMENT
-
-List the tests you would write before deploying the staking system to mainnet.
-
-Include at least:
-
-* Unit tests
-* Access-control tests
-* Reward calculation tests
-* Staking tests
-* Withdrawal tests
-* Claim tests
-* Edge-case tests
-* Failure/revert tests
-* Reentrancy tests
-* Fuzz/property tests
-
-Also briefly explain what you would verify before a mainnet deployment.
-
-EVALUATION CRITERIA
-
-Solidity & EVM Knowledge: 15 Points
-
-Smart Contract Security: 30 Points
-
-Staking Architecture: 25 Points
-
-Treasury & Production Architecture: 20 Points
-
-Testing & Engineering: 10 Points
-
-TOTAL: 100 POINTS
-
-ASSESSMENT EXPECTATIONS
-
-Please provide clear and concise answers.
-
-Focus on your own technical reasoning and practical engineering experience.
-
-Where appropriate, explain why you would choose a particular approach rather than simply naming a technology or security practice.
-
-You may use diagrams or pseudocode where they help explain your architecture.
-
-Time Limit: 60 Minutes
+* 90–100: Strong Senior Solana Engineer
+* 75–89: Mid/Senior Solana Engineer
+* 60–74: Mid-Level Developer
+* Below 60: Not Recommended
