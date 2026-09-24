@@ -1,0 +1,12 @@
+{
+    // Workspace root is Blockchain-Assessment/, but the Foundry project lives
+    // in Solidity/. This covers the case where you opened the parent folder,
+    // so the Solidity/.vscode/settings.json below is ignored by VS Code.
+    "solidity.formatter": "forge",
+    "solidity.compileUsingRemoteVersion": "v0.8.20+commit.a1b79de6",
+    "solidity.remappings": [
+        "forge-std/=Solidity/lib/forge-std/src/"
+    ],
+    "solidity.packageDefaultDependenciesDirectory": "Solidity/lib",
+    "solidity.packageDefaultDependenciesContractsDirectory": "src"
+}

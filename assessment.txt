@@ -1,0 +1,128 @@
+Blockchain Assessment
+
+I went through both the Solidity and Solana folders and fixed the issues I found rather than just changing the compiler versions.
+
+SOLIDITY
+
+I kept the original files in an archive folder and worked on copies in the contracts folder.
+
+Most of the Solidity contracts were written for older Solidity versions, so the first thing I had to deal with was the old syntax. I moved the contracts to Solidity 0.8.x where possible, replaced the old constructors, now, fallback functions and event calls, and changed the uint types to uint256.
+
+I also went through the contracts individually because they weren't all broken in exactly the same way.
+
+FixedSupplyToken:
+This was probably the cleanest contract. There wasn't a major logic bug, but I cleaned up the arithmetic, added zero-address checks, added useful revert messages and made the internal token state private. I also added some basic documentation instead of changing how the token works.
+
+FlexibleToken:
+This had most of the same cleanup as FixedSupplyToken. I also made sure the locked functionality was actually preserved, including lock(), the ability to update the name and symbol before locking, and the related events. I added checks against empty names/symbols. I left a note about token metadata since wallets can cache the old values.
+
+BitFwdToken:
+This one had an important old Solidity issue. It was using a function named after the contract as its constructor. With newer compiler versions that can become a normal callable function instead of being treated as a constructor, which is obviously not something I wanted to leave in place.
+
+I changed it to a real constructor and fixed the old event syntax. I also changed the raw totalSupply subtraction to use checked arithmetic and stopped minting to the zero address.
+
+The minting is still uncapped because that appears to be part of the original design. I didn't silently change the token economics just to make the contract look safer.
+
+MyToken:
+This is the crowdsale contract. Apart from the Solidity version issues, I found that it was pushing ETH directly to the owner with transfer(). That can fail when the owner is a contract because of the old gas stipend.
+
+I changed the payment to use a checked call and kept the state update before the external call. I also removed an unnecessary balance reset/zero transfer and added a Contribution event so the sale activity is easier to track.
+
+LEIA:
+This had the most obvious functional bug in the Solidity set.
+
+The ICO accepted ETH, calculated and minted the tokens, but then immediately did:
+
+msg.sender.transfer(msg.value)
+
+So the buyer effectively got their ETH back while keeping the tokens. The contract could therefore create tokens without actually raising the ETH described by the ICO.
+
+I changed this so the ETH stays in the contract and added an owner-only withdrawETH() function. The withdrawal also uses a checked call. I added some basic validation around the purchase and an ETHWithdrawn event.
+
+SeanTestToken:
+This is the fixed 100,000 supply token with zero decimals. I kept the original initial holder address rather than replacing it with msg.sender because that was part of the original contract.
+
+I converted the old SafeMath contract into a library, fixed the constructor and event syntax, and fixed the SafeMath usage in totalSupply. I also made both receive() and fallback() reject ETH.
+
+One thing I deliberately kept documented is that the initial supply is tied to the hard-coded address. If that address is lost, the original token allocation is effectively lost too.
+
+SafeMath:
+I made this a proper library for the newer Solidity contracts. The arithmetic has explicit checks and revert messages. I used unchecked blocks after the manual checks so Solidity's automatic panic does not happen before the custom SafeMath error, and added mod() as well.
+
+I also kept the 0.5.17 and 0.8.x SafeMath situation separate because the older contracts cannot simply import the 0.8.x library.
+
+Things I did NOT change:
+
+There are a few things I considered but deliberately left alone because they are design choices rather than clear bugs in this assessment:
+
+* The normal ERC20 approve overwrite behaviour.
+* approveAndCall making an external call.
+* Uncapped token sales/minting where that was part of the original contract.
+* No refund mechanism on the crowdsales.
+* Immediate treasury/owner payment in the contracts where that was intentional.
+
+I noted these rather than changing the token economics or completely redesigning the contracts.
+
+Testing:
+
+I added Foundry tests and ran:
+
+forge test
+
+Result:
+
+27 tests passed.
+
+The tests cover the fixed supply token, flexible token, BitFwd minting/locking behaviour, both sale contracts, SeanTestToken and SafeMath.
+
+For the LEIA contract in particular, I tested that sending 1 ETH during the bonus period creates 1200 tokens and that the ETH remains in the contract. I also tested that the owner can withdraw it and that another account cannot.
+
+SOLANA
+
+The Solana folder was a little different because there wasn't a complete Anchor workspace/toolchain available in the assessment environment.
+
+I went through the six Rust files and fixed the code and account/CPI logic, then used rustfmt to syntax-check the code. I did not claim an Anchor build or on-chain test because I couldn't actually run that part of the toolchain.
+
+lib.rs:
+There was a placeholder program ID and a module mismatch where dev_team didn't match dev_fund.rs. There were also conflicting imports/re-exports and an old native entrypoint alongside Anchor code.
+
+I fixed the module wiring and imports. There is still a structural issue in the supplied files: they contain multiple #[program] modules in one crate. These need to be merged into one Anchor program or separated into individual crates/programs.
+
+token.rs:
+The System import was coming from the wrong place and some of the CPI/account types were incorrect.
+
+I changed the system program import, fixed the InitializeMint and MintTo contexts and added account constraints for the mint and token accounts. I also added some basic validation.
+
+presale.rs:
+The original code used f64 for price calculations and checked balances without actually transferring the SOL. This meant tokens could effectively be bought without the payment being moved.
+
+I changed the pricing to integer lamports, added tier handling so a purchase can cross multiple tiers correctly, and added the actual SOL transfer from the buyer to the vault. Token minting now uses the proper CPI context and account constraints.
+
+liquidity.rs:
+The supplied purchase function accepted a price but did not actually use it to calculate the purchase correctly and didn't move either the SOL or tokens.
+
+I changed this to use a PDA for the liquidity account/vault, added checked arithmetic and proper SOL/token transfers. The PDA signs the token transfer.
+
+airdrop.rs:
+The main problems here were the on-chain HashSet, lack of a real whitelist authority check and the ability to claim more than once.
+
+I replaced the HashSet with serializable vectors and kept the whitelist and claimed state aligned. I added an authority check, mark the user as claimed before transferring tokens, and used checked arithmetic for the allocation timing.
+
+dev_fund.rs:
+There were a few logic issues here. The month calculation was using a full year where a month was intended, which made the release schedule much slower than expected. There were also type/mutability issues, missing account sizing and an incorrect transfer setup.
+
+I changed the release calculation to use 30-day months, added checked arithmetic, created the dev-fund PDA/vault structure and made the release proportional to the 24-month schedule. I also prevented allocate() from being used repeatedly to reset the schedule.
+
+Solana testing status:
+
+The Solana files were syntax-formatted with rustfmt.
+
+I did NOT run an Anchor build or on-chain tests because the supplied assessment did not include a complete Anchor workspace/toolchain. Before deployment I would set up the Anchor workspace, add the program ID, resolve the multiple #[program] structure and then run anchor build/test against a local validator or devnet.
+
+Overall:
+
+The main approach was to fix actual problems while trying not to change the intended behaviour of the original contracts. Where something looked like a design decision rather than a definite bug, I left it in place and documented it.
+
+Solidity: compiled and tested with Foundry – 27/27 tests passing.
+
+Solana: code corrected and syntax-checked with rustfmt – Anchor/on-chain testing still needs to be done once the project is put into a complete Anchor workspace.

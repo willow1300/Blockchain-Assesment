@@ -1,0 +1,13 @@
+{
+    // Tell the VS Code Solidity extension (NomicFoundation / Juan Blanco)
+    // where Foundry lives in this repo. Without this it doesn't know
+    // "forge-std/" means Solidity/lib/forge-std/src, so it underlines
+    // the import even though `forge build` / `forge test` work fine.
+    "solidity.formatter": "forge",
+    "solidity.compileUsingRemoteVersion": "v0.8.20+commit.a1b79de6",
+    "solidity.remappings": [
+        "forge-std/=lib/forge-std/src/"
+    ],
+    "solidity.packageDefaultDependenciesDirectory": "lib",
+    "solidity.packageDefaultDependenciesContractsDirectory": "src"
+}
